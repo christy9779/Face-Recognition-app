@@ -1,3 +1,5 @@
+import os
+import urllib.request
 import cv2
 import numpy as np
 import streamlit as st
@@ -7,17 +9,19 @@ st.set_page_config(
 )
 
 st.title("👤 Face Detection & Recognition App")
-st.write(
-    "Upload an image below to detect and highlight human faces using OpenCV"
-    " Haar Cascades."
-)
+st.write("Upload an image below to detect and highlight human faces.")
+
+# Automatically download the Haar Cascade file if not present
+cascade_url = "https://raw.githubusercontent.com/opencv/opencv/master/data/haarcascades/haarcascade_frontalface_default.xml"
+cascade_path = "haarcascade_frontalface_default.xml"
+
+if not os.path.exists(cascade_path):
+  urllib.request.urlretrieve(cascade_url, cascade_path)
 
 
 @st.cache_resource
 def load_cascade():
-  return cv2.CascadeClassifier(
-      cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-  )
+  return cv2.CascadeClassifier(cascade_path)
 
 
 face_cascade = load_cascade()
@@ -31,7 +35,6 @@ if uploaded_file is not None:
   img = cv2.imdecode(file_bytes, 1)
   gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-  # Detect faces
   faces = face_cascade.detectMultiScale(
       gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30)
   )
@@ -57,11 +60,10 @@ if uploaded_file is not None:
 
   with col2:
     st.subheader("Detection Analysis & Metrics")
-    st.success(f"Successfully detected **{len(faces)}** face(s) in the image!")
+    st.success(f"Successfully detected **{len(faces)}** face(s)!")
     st.markdown("""
         * **Algorithm:** OpenCV Haar Cascade Classifier
-        * **Preprocessing:** Grayscale conversion & multi-scale detection
-        * **Performance:** Instantaneous execution & zero dependency conflicts
+        * **Status:** Fully Operational
         """)
 else:
   st.info("Please upload an image file to start face detection.")
