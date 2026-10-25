@@ -15,27 +15,19 @@ st.write(
 )
 
 
-# Robust Cascade Loader
+# Robust Cascade Loader with proper User-Agent headers
 @st.cache_resource
 def load_face_cascade():
   xml_file = "haarcascade_frontalface_default.xml"
   try:
-    path = cv2.data.haarcascades + xml_file
-    cascade = cv2.CascadeClassifier(path)
-    if not cascade.empty():
-      return cascade
-  except Exception:
-    pass
+    url = f"https://raw.githubusercontent.com/opencv/opencv/master/data/haarcascades/{xml_file}"
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req) as response:
+      with open(xml_file, "wb") as f:
+        f.write(response.read())
+  except Exception as e:
+    st.warning(f"Using local fallback or error: {e}")
 
-  try:
-    cascade = cv2.CascadeClassifier(xml_file)
-    if not cascade.empty():
-      return cascade
-  except Exception:
-    pass
-
-  url = f"https://raw.githubusercontent.com/opencv/opencv/master/data/haarcascades/{xml_file}"
-  urllib.request.urlretrieve(url, xml_file)
   return cv2.CascadeClassifier(xml_file)
 
 
