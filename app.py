@@ -26,10 +26,14 @@ if uploaded_file is not None:
   # Convert image to grayscale for Haar Cascade detection
   gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-  # Load OpenCV Pre-trained Haar Cascade Classifier for faces
-  face_cascade = cv2.CascadeClassifier(
-      cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-  )
+  # Load OpenCV Haar Cascade Classifier using a safe fallback path
+  cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+  face_cascade = cv2.CascadeClassifier(cascade_path)
+
+  # Fallback if cv2.data fails in cloud environment
+  if face_cascade.empty():
+    face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
+
   faces = face_cascade.detectMultiScale(
       gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30)
   )
