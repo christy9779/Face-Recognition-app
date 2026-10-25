@@ -1,3 +1,4 @@
+import urllib.request
 import cv2
 import numpy as np
 import streamlit as st
@@ -13,32 +14,47 @@ st.write(
     " and computer vision algorithms."
 )
 
+
+# Robust Cascade Loader
+@st.cache_resource
+def load_face_cascade():
+  xml_file = "haarcascade_frontalface_default.xml"
+  try:
+    path = cv2.data.haarcascades + xml_file
+    cascade = cv2.CascadeClassifier(path)
+    if not cascade.empty():
+      return cascade
+  except Exception:
+    pass
+
+  try:
+    cascade = cv2.CascadeClassifier(xml_file)
+    if not cascade.empty():
+      return cascade
+  except Exception:
+    pass
+
+  url = f"https://raw.githubusercontent.com/opencv/opencv/master/data/haarcascades/{xml_file}"
+  urllib.request.urlretrieve(url, xml_file)
+  return cv2.CascadeClassifier(xml_file)
+
+
+face_cascade = load_face_cascade()
+
 # File uploader widget
 uploaded_file = st.file_uploader(
     "Choose an image...", type=["jpg", "jpeg", "png"]
 )
 
 if uploaded_file is not None:
-  # Read the image file bytes
   file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
   img = cv2.imdecode(file_bytes, 1)
-
-  # Convert image to grayscale for Haar Cascade detection
   gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-  # Load OpenCV Haar Cascade Classifier using a safe fallback path
-  cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-  face_cascade = cv2.CascadeClassifier(cascade_path)
-
-  # Fallback if cv2.data fails in cloud environment
-  if face_cascade.empty():
-    face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
 
   faces = face_cascade.detectMultiScale(
       gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30)
   )
 
-  # Draw green bounding boxes around detected faces
   for x, y, w, h in faces:
     cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 3)
     cv2.putText(
@@ -51,10 +67,8 @@ if uploaded_file is not None:
         2,
     )
 
-  # Convert OpenCV BGR format to RGB for correct Streamlit display
   img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-  # Layout Results
   col1, col2 = st.columns(2)
   with col1:
     st.subheader("Processed Image Output")
